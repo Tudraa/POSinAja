@@ -179,8 +179,8 @@ export default function ProductManagement() {
             <button
               onClick={() => setSelectedEventFilter("ALL")}
               className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${selectedEventFilter === "ALL"
-                  ? "bg-on-surface text-on-primary shadow-md"
-                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"
+                ? "bg-on-surface text-on-primary shadow-md"
+                : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"
                 }`}
             >
               Semua Menu
@@ -191,8 +191,8 @@ export default function ProductManagement() {
                 key={ev.id}
                 onClick={() => setSelectedEventFilter(ev.id)}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${selectedEventFilter === ev.id
-                    ? "bg-orange-50 text-primary-container ring-1 ring-primary-container shadow-sm border-transparent"
-                    : "bg-surface-container-lowest border-surface-container text-on-surface-variant hover:border-primary-container/30 hover:bg-orange-50/50"
+                  ? "bg-orange-50 text-primary-container ring-1 ring-primary-container shadow-sm border-transparent"
+                  : "bg-surface-container-lowest border-surface-container text-on-surface-variant hover:border-primary-container/30 hover:bg-orange-50/50"
                   }`}
               >
                 {ev.name}
@@ -277,24 +277,24 @@ export default function ProductManagement() {
                     <td className="px-8 py-5 text-center">
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${prod.is_available
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : "bg-red-50 text-red-600 border-red-100"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          : "bg-red-50 text-red-600 border-red-100"
                           }`}
                       >
                         {prod.is_available ? "READY" : "EMPTY"}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-2">
                         <button
                           onClick={() => openEdit(prod)}
-                          className="p-2 text-on-surface-variant/50 hover:text-primary transition-colors"
+                          className="p-2 text-primary"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(prod.id, prod.name)}
-                          className="p-2 text-on-surface-variant/50 hover:text-error transition-colors"
+                          className="p-2 text-error"
                         >
                           <Trash2 size={18} />
                         </button>
