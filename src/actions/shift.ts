@@ -42,13 +42,14 @@ export async function checkOrOpenShift(profileId: string) {
   }
 }
 
-export async function endShift(shiftId: string) {
+export async function endShift(shiftId: string, endingCash: number) {
   try {
     const { error } = await supabaseAdmin
       .from("shifts")
       .update({
         status: "CLOSED",
         end_time: new Date().toISOString(),
+        ending_cash: endingCash, // <-- TAMBAHAN: Menyimpan uang fisik kasir
       })
       .eq("id", shiftId);
 

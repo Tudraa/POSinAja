@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { formatRupiah } from "@/utils/format";
-import { ShoppingCart, LogOut, Search, MapPin, Tag } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ShoppingCart, Search, MapPin, Tag } from "lucide-react";
 import ProductCard from "@/components/pos/ProductCard";
 import CartItem from "@/components/pos/CartItem";
 import PaymentMethodSelector from "@/components/pos/PaymentMethodSelector";
-import { checkOrOpenShift, endShift } from "@/actions/shift"; // <--- TAMBAHKAN INI
+import EndShiftButton from "@/components/pos/EndShiftButton";
+import { checkOrOpenShift } from "@/actions/shift";
 
 // --- Tipe Data TypeScript ---
 type Product = {
@@ -40,7 +40,6 @@ export default function PosPage() {
 
   const [cart, setCart] = useState<CartItem_Type[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -49,7 +48,6 @@ export default function PosPage() {
   //shift
   const [activeShiftId, setActiveShiftId] = useState<string>("");
 
-  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -107,30 +105,6 @@ export default function PosPage() {
       alert("Terjadi kesalahan sistem: " + err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    const confirmLogout = confirm(
-      "Apakah Anda yakin ingin mengakhiri shift? Buku transaksi akan ditutup dan Anda akan keluar.",
-    );
-    if (!confirmLogout) return;
-
-    setIsLoggingOut(true);
-    try {
-      // 1. Tutup shift di database
-      if (activeShiftId) {
-        await endShift(activeShiftId);
-      }
-
-      // 2. Keluar dari akun Supabase
-      await supabase.auth.signOut({ scope: "global" });
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout error:", error);
-      setIsLoggingOut(false);
     }
   };
 
@@ -274,18 +248,7 @@ export default function PosPage() {
             </div>
 
             {/* Keluar Shift Button */}
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="px-5 py-2 rounded-xl border border-outline/30 text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              {isLoggingOut ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              ) : (
-                <LogOut size={18} className="text-primary" />
-              )}
-              {isLoggingOut ? "Keluar..." : "Keluar Shift"}
-            </button>
+            <EndShiftButton shiftId={activeShiftId} />
           </header>
 
           {/* --- Filters Section (Events & Categories) --- */}
