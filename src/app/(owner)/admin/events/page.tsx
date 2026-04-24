@@ -181,8 +181,8 @@ export default function EventManagement() {
                       onClick={() => handleToggleStatus(ev.id, ev.is_active)}
                       disabled={loading}
                       className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest inline-flex items-center gap-1.5 transition-colors border ${ev.is_active
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
-                          : "bg-surface-container-high text-on-surface-variant border-surface-container hover:bg-surface-container"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
+                        : "bg-surface-container-high text-on-surface-variant border-surface-container hover:bg-surface-container"
                         }`}
                     >
                       <Power size={10} />
@@ -190,10 +190,10 @@ export default function EventManagement() {
                     </button>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openEditModal(ev)}
-                        className="p-2 text-on-surface-variant/50 hover:text-primary transition-colors"
+                        className="p-2 text-primary"
                         title="Edit Event"
                       >
                         <Edit2 size={18} />
@@ -201,7 +201,7 @@ export default function EventManagement() {
                       <button
                         onClick={() => handleDeleteEvent(ev.id, ev.name)}
                         disabled={loading}
-                        className="p-2 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-50"
+                        className="p-2 text-error disabled:opacity-50"
                         title="Hapus Event"
                       >
                         <Trash2 size={18} />

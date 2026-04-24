@@ -168,8 +168,8 @@ export default function EmployeeManagement() {
                   <div className="flex items-center gap-4">
                     <div
                       className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm border ${emp.role === "OWNER"
-                          ? "bg-purple-50 text-purple-600 border-purple-100"
-                          : "bg-orange-50 text-primary border-orange-100"
+                        ? "bg-purple-50 text-purple-600 border-purple-100"
+                        : "bg-orange-50 text-primary border-orange-100"
                         }`}
                     >
                       {emp.name ? emp.name.charAt(0).toUpperCase() : "U"}
@@ -187,8 +187,8 @@ export default function EmployeeManagement() {
                 <td className="px-8 py-6">
                   <span
                     className={`px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-wider border flex items-center gap-1 w-fit ${emp.role === "OWNER"
-                        ? "bg-purple-50 text-purple-600 border-purple-100"
-                        : "bg-blue-50 text-blue-600 border-blue-100"
+                      ? "bg-purple-50 text-purple-600 border-purple-100"
+                      : "bg-blue-50 text-blue-600 border-blue-100"
                       }`}
                   >
                     <Shield size={10} /> {emp.role}
@@ -201,10 +201,10 @@ export default function EmployeeManagement() {
                   </div>
                 </td>
                 <td className="px-8 py-6 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => openEditModal(emp)}
-                      className="p-2 text-on-surface-variant/50 hover:text-primary transition-colors"
+                      className="p-2 text-primary"
                       title="Edit Karyawan"
                     >
                       <Edit2 size={18} />
@@ -215,7 +215,7 @@ export default function EmployeeManagement() {
                           handleDeleteEmployee(emp.id, emp.name || "Karyawan")
                         }
                         disabled={loading}
-                        className="p-2 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-50"
+                        className="p-2 text-error disabled:opacity-50"
                         title="Hapus"
                       >
                         <Trash2 size={18} />

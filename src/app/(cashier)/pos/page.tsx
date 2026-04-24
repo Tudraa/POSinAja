@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { formatRupiah } from "@/utils/format";
-import { ShoppingCart, LogOut, Search, MapPin, Tag } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ShoppingCart, Search, MapPin, Tag, ScrollText, X } from "lucide-react";
 import ProductCard from "@/components/pos/ProductCard";
 import CartItem from "@/components/pos/CartItem";
 import PaymentMethodSelector from "@/components/pos/PaymentMethodSelector";
-import { checkOrOpenShift, endShift } from "@/actions/shift"; // <--- TAMBAHKAN INI
+import EndShiftButton from "@/components/pos/EndShiftButton";
+import TransactionHistoryDrawer from "@/components/pos/TransactionHistoryDrawer";
+import { checkOrOpenShift } from "@/actions/shift";
 
 // --- Tipe Data TypeScript ---
 type Product = {
@@ -40,7 +41,6 @@ export default function PosPage() {
 
   const [cart, setCart] = useState<CartItem_Type[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -48,8 +48,8 @@ export default function PosPage() {
 
   //shift
   const [activeShiftId, setActiveShiftId] = useState<string>("");
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
 
-  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -107,30 +107,6 @@ export default function PosPage() {
       alert("Terjadi kesalahan sistem: " + err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    const confirmLogout = confirm(
-      "Apakah Anda yakin ingin mengakhiri shift? Buku transaksi akan ditutup dan Anda akan keluar.",
-    );
-    if (!confirmLogout) return;
-
-    setIsLoggingOut(true);
-    try {
-      // 1. Tutup shift di database
-      if (activeShiftId) {
-        await endShift(activeShiftId);
-      }
-
-      // 2. Keluar dari akun Supabase
-      await supabase.auth.signOut({ scope: "global" });
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout error:", error);
-      setIsLoggingOut(false);
     }
   };
 
@@ -202,6 +178,7 @@ export default function PosPage() {
           customer_name: customerName || "Pelanggan Umum",
           payment_method: paymentMethod,
           total_amount: totalPrice,
+          status: "COMPLETED",
         })
         .select()
         .single();
@@ -273,20 +250,25 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* Keluar Shift Button */}
+            {/* Transaction History Button */}
             <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="px-5 py-2 rounded-xl border border-outline/30 text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center gap-2 disabled:opacity-50"
+              onClick={() => setIsHistoryDrawerOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-outline/30 text-on-surface hover:bg-surface-container-low transition-all"
             >
-              {isLoggingOut ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              ) : (
-                <LogOut size={18} className="text-primary" />
-              )}
-              {isLoggingOut ? "Keluar..." : "Keluar Shift"}
+              <ScrollText size={20} />
+              <span className="text-sm font-bold">Riwayat Transaksi</span>
             </button>
+
+            {/* Keluar Shift Button */}
+            <EndShiftButton shiftId={activeShiftId} />
           </header>
+
+          {/* Transaction History Drawer */}
+          <TransactionHistoryDrawer
+            isOpen={isHistoryDrawerOpen}
+            onClose={() => setIsHistoryDrawerOpen(false)}
+            shiftId={activeShiftId}
+          />
 
           {/* --- Filters Section (Events & Categories) --- */}
           <div className="px-8 pb-4 flex flex-col gap-3">
@@ -300,11 +282,10 @@ export default function PosPage() {
               </div>
               <button
                 onClick={() => setActiveEventId("ALL")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                  activeEventId === "ALL"
-                    ? "bg-slate-800 text-white"
-                    : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                }`}
+                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeEventId === "ALL"
+                  ? "bg-slate-800 text-white"
+                  : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                  }`}
               >
                 Semua Event Aktif
               </button>
@@ -317,11 +298,10 @@ export default function PosPage() {
                   <button
                     key={ev.id}
                     onClick={() => setActiveEventId(ev.id)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                      activeEventId === ev.id
-                        ? "bg-primary text-on-primary ring-2 ring-primary/20"
-                        : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeEventId === ev.id
+                      ? "bg-primary text-on-primary ring-2 ring-primary/20"
+                      : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                      }`}
                   >
                     {ev.name}
                   </button>
@@ -339,11 +319,10 @@ export default function PosPage() {
               </div>
               <button
                 onClick={() => setActiveCategoryId("ALL")}
-                className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                  activeCategoryId === "ALL"
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                }`}
+                className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeCategoryId === "ALL"
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                  }`}
               >
                 Semua Menu
               </button>

@@ -172,7 +172,7 @@ export default function CategoryManagement() {
                     <span className="font-bold text-on-surface font-headline">{cat.name}</span>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-2">
                       <button
                         onClick={() => {
                           setEditId(cat.id);
@@ -180,14 +180,14 @@ export default function CategoryManagement() {
                           setEditColor(cat.color || PRESET_COLORS[0]);
                           setIsEditModalOpen(true);
                         }}
-                        className="p-2 text-on-surface-variant/50 hover:text-primary transition-colors"
+                        className="p-2 text-primary"
                       >
                         <Edit2 size={18} />
                       </button>
                       <button
                         onClick={() => handleDelete(cat.id, cat.name)}
                         disabled={loading}
-                        className="p-2 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-50"
+                        className="p-2 text-error disabled:opacity-50"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -240,8 +240,8 @@ export default function CategoryManagement() {
                       type="button"
                       onClick={() => setColor(c)}
                       className={`w-10 h-10 rounded-full border-4 transition-all shadow-sm ${color === c
-                          ? "border-on-surface scale-110"
-                          : "border-transparent hover:scale-105"
+                        ? "border-on-surface scale-110"
+                        : "border-transparent hover:scale-105"
                         }`}
                       style={{ backgroundColor: c }}
                       title={`Pilih warna ${c}`}
@@ -301,8 +301,8 @@ export default function CategoryManagement() {
                       type="button"
                       onClick={() => setEditColor(c)}
                       className={`w-10 h-10 rounded-full border-4 transition-all shadow-sm ${editColor === c
-                          ? "border-on-surface scale-110"
-                          : "border-transparent hover:scale-105"
+                        ? "border-on-surface scale-110"
+                        : "border-transparent hover:scale-105"
                         }`}
                       style={{ backgroundColor: c }}
                       title={`Pilih warna ${c}`}

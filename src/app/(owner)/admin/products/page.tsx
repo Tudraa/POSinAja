@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { addProduct, updateProduct, deleteProduct } from "@/actions/product";
+import { formatRupiah } from "@/utils/format";
 import {
   Search,
   Plus,
@@ -12,50 +14,67 @@ import {
   X,
   CalendarDays,
 } from "lucide-react";
-import { addProduct, updateProduct, deleteProduct } from "@/actions/product";
-import { formatRupiah } from "@/utils/format";
+
+// ─── TYPES ──────────────────────────────────────────────────────────────────
+
+type ProductFormData = {
+  name: string;
+  price: number | ""; // Mengizinkan number ATAU string kosong
+  image_url: string;
+  category_id: string;
+  event_id: string;
+  is_available: boolean;
+};
+
+const INITIAL_FORM_STATE: ProductFormData = {
+  name: "",
+  price: 0,
+  image_url: "",
+  category_id: "",
+  event_id: "",
+  is_available: true,
+};
+
+// ─── COMPONENT ──────────────────────────────────────────────────────────────
 
 export default function ProductManagement() {
+  // Database States
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+
+  // UI States
   const [searchQuery, setSearchQuery] = useState("");
-
-  // 🔥 FITUR BARU: State untuk filter event yang aktif
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>("ALL");
-
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
-  // Form State
+  // Modal & Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState("");
+  const [formData, setFormData] = useState<ProductFormData>(INITIAL_FORM_STATE);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    price: 0,
-    image_url: "",
-    category_id: "",
-    event_id: "",
-    is_available: true,
-  });
+  const supabase = createClient();
+
+  // ─── EFFECTS & FETCH DATA ──────────────────────────────────────────────────
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    // Ambil Produk
     const { data: prodData } = await supabase
       .from("products")
       .select("*, categories(name, color), events(name)")
       .order("created_at", { ascending: false });
 
+    // Ambil Kategori
     const { data: catData } = await supabase
       .from("categories")
       .select("id, name");
 
-    // Ambil SEMUA event (bahkan yang non-aktif) agar produk lama tetap bisa difilter
+    // Ambil SEMUA Event (bahkan yang non-aktif)
     const { data: eventData } = await supabase
       .from("events")
       .select("id, name")
@@ -66,33 +85,10 @@ export default function ProductManagement() {
     if (eventData) setEvents(eventData);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const result = editMode
-      ? await updateProduct(currentId, formData)
-      : await addProduct(formData);
-
-    if (result.success) {
-      setIsModalOpen(false);
-      resetForm();
-      fetchData();
-    } else {
-      alert("Error: " + result.message);
-    }
-    setLoading(false);
-  };
+  // ─── HANDLERS ──────────────────────────────────────────────────────────────
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      price: 0,
-      image_url: "",
-      category_id: "",
-      event_id: "",
-      is_available: true,
-    });
+    setFormData(INITIAL_FORM_STATE);
     setEditMode(false);
     setCurrentId("");
   };
@@ -111,25 +107,50 @@ export default function ProductManagement() {
     setIsModalOpen(true);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Pastikan price dikonversi ke angka sebelum dikirim ke database
+    const payloadToSubmit = {
+      ...formData,
+      price: Number(formData.price),
+    };
+
+    const result = editMode
+      ? await updateProduct(currentId, payloadToSubmit)
+      : await addProduct(payloadToSubmit);
+
+    if (result.success) {
+      setIsModalOpen(false);
+      resetForm();
+      fetchData();
+    } else {
+      alert("Error: " + result.message);
+    }
+
+    setLoading(false);
+  };
+
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Hapus produk "${name}"?`)) return;
+    if (!window.confirm(`Hapus produk "${name}"?`)) return;
     const result = await deleteProduct(id);
     if (result.success) fetchData();
   };
 
-  // 🔥 FITUR BARU: Logika penyaringan ganda (Pencarian Teks + Filter Event)
+  // ─── FILTER LOGIC ──────────────────────────────────────────────────────────
+
   const filteredProducts = products.filter((p) => {
-    const matchSearch = p.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchEvent =
-      selectedEventFilter === "ALL" || p.event_id === selectedEventFilter;
+    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchEvent = selectedEventFilter === "ALL" || p.event_id === selectedEventFilter;
     return matchSearch && matchEvent;
   });
 
+  // ─── RENDER ────────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* --- HEADER --- */}
       <div className="flex justify-between items-end py-6">
         <div>
           <h2 className="text-3xl font-extrabold font-headline text-on-surface tracking-tight">
@@ -150,11 +171,13 @@ export default function ProductManagement() {
         </button>
       </div>
 
-      {/* Data Container */}
+      {/* --- DATA CONTAINER --- */}
       <div className="bg-surface-container-lowest rounded-2xl ambient-shadow overflow-hidden ghost-border">
-        {/* Control Area */}
+
+        {/* Controls Area (Search & Filters) */}
         <div className="p-6 border-b border-surface-container-low space-y-4">
-          {/* Search */}
+
+          {/* Search Input */}
           <div className="relative max-w-md">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant"
@@ -175,7 +198,6 @@ export default function ProductManagement() {
               size={18}
               className="text-on-surface-variant mr-2 flex-shrink-0"
             />
-
             <button
               onClick={() => setSelectedEventFilter("ALL")}
               className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${selectedEventFilter === "ALL"
@@ -185,7 +207,6 @@ export default function ProductManagement() {
             >
               Semua Menu
             </button>
-
             {events.map((ev) => (
               <button
                 key={ev.id}
@@ -216,25 +237,15 @@ export default function ProductManagement() {
             <tbody className="divide-y divide-surface-container-low">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-8 py-16 text-center text-on-surface-variant"
-                  >
+                  <td colSpan={5} className="px-8 py-16 text-center text-on-surface-variant">
                     <Package size={48} className="mx-auto mb-4 opacity-20" />
-                    <p className="font-semibold text-on-surface">
-                      Tidak ada produk ditemukan.
-                    </p>
-                    <p className="text-sm">
-                      Coba ganti filter event atau ubah kata kunci pencarian.
-                    </p>
+                    <p className="font-semibold text-on-surface">Tidak ada produk ditemukan.</p>
+                    <p className="text-sm">Coba ganti filter event atau ubah kata kunci pencarian.</p>
                   </td>
                 </tr>
               ) : (
                 filteredProducts.map((prod) => (
-                  <tr
-                    key={prod.id}
-                    className="hover:bg-surface-container-low/50 transition-colors group"
-                  >
+                  <tr key={prod.id} className="hover:bg-surface-container-low/50 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-surface-container-low overflow-hidden border border-surface-container flex-shrink-0">
@@ -251,9 +262,7 @@ export default function ProductManagement() {
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-on-surface text-sm font-headline">
-                            {prod.name}
-                          </p>
+                          <p className="font-bold text-on-surface text-sm font-headline">{prod.name}</p>
                           <p className="text-[10px] text-on-surface-variant font-medium tracking-tighter uppercase mt-0.5">
                             📍 {prod.events?.name || "Tanpa Event"}
                           </p>
@@ -285,17 +294,11 @@ export default function ProductManagement() {
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(prod)}
-                          className="p-2 text-on-surface-variant/50 hover:text-primary transition-colors"
-                        >
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => openEdit(prod)} className="p-2 text-primary hover:opacity-70 transition">
                           <Edit2 size={18} />
                         </button>
-                        <button
-                          onClick={() => handleDelete(prod.id, prod.name)}
-                          className="p-2 text-on-surface-variant/50 hover:text-error transition-colors"
-                        >
+                        <button onClick={() => handleDelete(prod.id, prod.name)} className="p-2 text-error hover:opacity-70 transition">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -308,21 +311,26 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* --- MODAL PRODUK --- */}
+      {/* --- MODAL FORM PRODUK --- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-on-surface/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-lg ambient-shadow relative max-h-[90vh] overflow-y-auto">
+
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-6 top-6 text-on-surface-variant hover:text-on-surface"
+              className="absolute right-6 top-6 text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <X size={20} />
             </button>
+
             <h2 className="text-2xl font-extrabold font-headline text-on-surface mb-6">
               {editMode ? "Edit Produk" : "Tambah Produk Baru"}
             </h2>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+
+                {/* Input Nama */}
                 <div className="col-span-2">
                   <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
                     Nama Produk
@@ -331,48 +339,60 @@ export default function ProductManagement() {
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 text-on-surface"
-                    placeholder="Nasi Goreng Spesial"
+                    placeholder="Contoh: Nasi Goreng Spesial"
                   />
                 </div>
+
+                {/* Input Harga (Sudah di-patch Anti-NaN) */}
                 <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
+                  <label
+                    className={`block text-xs font-bold uppercase mb-2 ${formData.price === "" ? "text-error" : "text-on-surface-variant"
+                      }`}
+                  >
                     Harga (Rp)
                   </label>
                   <input
                     type="number"
                     required
+                    min="0"
                     value={formData.price}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
-                        price: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 text-on-surface"
+                        price: val === "" ? "" : Number(val),
+                      });
+                    }}
+                    className={`w-full p-3 border rounded-xl text-sm outline-none transition-all ${formData.price === ""
+                        ? "bg-red-50 border-red-500 text-red-700 focus:ring-2 focus:ring-red-500"
+                        : "bg-surface-container-low border-surface-container text-on-surface focus:ring-2 focus:ring-primary/20"
+                      }`}
                   />
+                  {formData.price === "" && (
+                    <p className="mt-1 text-[11px] text-red-500 font-bold">
+                      *Harga wajib diisi angka!
+                    </p>
+                  )}
                 </div>
+
+                {/* Input Status */}
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
                     Status Stok
                   </label>
                   <select
                     value={formData.is_available ? "true" : "false"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        is_available: e.target.value === "true",
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, is_available: e.target.value === "true" })}
                     className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none text-on-surface font-bold focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="true">Tersedia (Ready)</option>
                     <option value="false">Habis (Empty)</option>
                   </select>
                 </div>
+
+                {/* Input Kategori */}
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
                     Kategori Global
@@ -380,19 +400,17 @@ export default function ProductManagement() {
                   <select
                     required
                     value={formData.category_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category_id: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                     className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none text-on-surface focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="">-- Pilih Kategori --</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Input Event */}
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
                     Masuk Event Mana?
@@ -400,19 +418,17 @@ export default function ProductManagement() {
                   <select
                     required
                     value={formData.event_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, event_id: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, event_id: e.target.value })}
                     className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none text-on-surface focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="">-- Pilih Event --</option>
                     {events.map((ev) => (
-                      <option key={ev.id} value={ev.id}>
-                        {ev.name}
-                      </option>
+                      <option key={ev.id} value={ev.id}>{ev.name}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Input URL Gambar */}
                 <div className="col-span-2">
                   <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
                     URL Gambar (Opsional)
@@ -420,17 +436,17 @@ export default function ProductManagement() {
                   <input
                     type="text"
                     value={formData.image_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image_url: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                     className="w-full p-3 bg-surface-container-low border border-surface-container rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 text-on-surface"
                     placeholder="https://image-link.com/photo.jpg"
                   />
                 </div>
               </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || formData.price === ""}
                 className="w-full py-4 mt-4 hero-gradient text-on-primary rounded-xl font-bold disabled:opacity-50 transition-all ambient-shadow"
               >
                 {loading
@@ -439,6 +455,7 @@ export default function ProductManagement() {
                     ? "Simpan Perubahan"
                     : "Simpan Produk"}
               </button>
+
             </form>
           </div>
         </div>
