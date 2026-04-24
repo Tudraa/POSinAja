@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  Receipt,
 } from "lucide-react";
 
 import LogoutButton from "@/components/LogoutButton";
@@ -35,6 +36,7 @@ export default function AdminLayout({
     { name: "Categories", href: "/admin/categories", icon: Layers },
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Employees", href: "/admin/employees", icon: Users },
+    { name: "Transactions", href: "/admin/transactions", icon: Receipt },
     { name: "Reports", href: "/admin/reports", icon: BarChart3 },
     { name: "POS", href: "/pos", icon: ShoppingCart },
   ];

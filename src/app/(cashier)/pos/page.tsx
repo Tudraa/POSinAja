@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { formatRupiah } from "@/utils/format";
-import { ShoppingCart, Search, MapPin, Tag } from "lucide-react";
+import { ShoppingCart, Search, MapPin, Tag, ScrollText, X } from "lucide-react";
 import ProductCard from "@/components/pos/ProductCard";
 import CartItem from "@/components/pos/CartItem";
 import PaymentMethodSelector from "@/components/pos/PaymentMethodSelector";
 import EndShiftButton from "@/components/pos/EndShiftButton";
+import TransactionHistoryDrawer from "@/components/pos/TransactionHistoryDrawer";
 import { checkOrOpenShift } from "@/actions/shift";
 
 // --- Tipe Data TypeScript ---
@@ -47,6 +48,7 @@ export default function PosPage() {
 
   //shift
   const [activeShiftId, setActiveShiftId] = useState<string>("");
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
 
   const supabase = createClient();
 
@@ -176,6 +178,7 @@ export default function PosPage() {
           customer_name: customerName || "Pelanggan Umum",
           payment_method: paymentMethod,
           total_amount: totalPrice,
+          status: "COMPLETED",
         })
         .select()
         .single();
@@ -247,9 +250,25 @@ export default function PosPage() {
               </div>
             </div>
 
+            {/* Transaction History Button */}
+            <button
+              onClick={() => setIsHistoryDrawerOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-outline/30 text-on-surface hover:bg-surface-container-low transition-all"
+            >
+              <ScrollText size={20} />
+              <span className="text-sm font-bold">Riwayat Transaksi</span>
+            </button>
+
             {/* Keluar Shift Button */}
             <EndShiftButton shiftId={activeShiftId} />
           </header>
+
+          {/* Transaction History Drawer */}
+          <TransactionHistoryDrawer
+            isOpen={isHistoryDrawerOpen}
+            onClose={() => setIsHistoryDrawerOpen(false)}
+            shiftId={activeShiftId}
+          />
 
           {/* --- Filters Section (Events & Categories) --- */}
           <div className="px-8 pb-4 flex flex-col gap-3">
@@ -263,11 +282,10 @@ export default function PosPage() {
               </div>
               <button
                 onClick={() => setActiveEventId("ALL")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                  activeEventId === "ALL"
-                    ? "bg-slate-800 text-white"
-                    : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                }`}
+                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeEventId === "ALL"
+                  ? "bg-slate-800 text-white"
+                  : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                  }`}
               >
                 Semua Event Aktif
               </button>
@@ -280,11 +298,10 @@ export default function PosPage() {
                   <button
                     key={ev.id}
                     onClick={() => setActiveEventId(ev.id)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                      activeEventId === ev.id
-                        ? "bg-primary text-on-primary ring-2 ring-primary/20"
-                        : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeEventId === ev.id
+                      ? "bg-primary text-on-primary ring-2 ring-primary/20"
+                      : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                      }`}
                   >
                     {ev.name}
                   </button>
@@ -302,11 +319,10 @@ export default function PosPage() {
               </div>
               <button
                 onClick={() => setActiveCategoryId("ALL")}
-                className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
-                  activeCategoryId === "ALL"
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
-                }`}
+                className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeCategoryId === "ALL"
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface text-on-surface hover:bg-surface-container-low border border-outline/10"
+                  }`}
               >
                 Semua Menu
               </button>
